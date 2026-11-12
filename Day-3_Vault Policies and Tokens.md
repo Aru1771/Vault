@@ -227,4 +227,6 @@ The flow:
     6. When the lease expires or is revoked, Vault revokes the generated credentials.
 <img width="624" height="340" alt="image" src="https://github.com/user-attachments/assets/9a56aa6e-f4bd-4271-9be3-5c2cae946cb7" />
 
+<img width="543" height="255" alt="image" src="https://github.com/user-attachments/assets/3ede0803-c860-41a3-878b-f9debbbe862c" />
+
 
