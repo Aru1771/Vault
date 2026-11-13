@@ -69,3 +69,98 @@ Official documentation: HashiCorp Vault Jenkins Plugin
 
 <img width="1003" height="752" alt="image" src="https://github.com/user-attachments/assets/dd9a137f-8f4b-42f5-8331-8eeb14e1affa" />
 
+4. Practical – Retrieve secrets inside Jenkinsfile (10 minutes)
+
+Let's assume Vault already contains this KV v2 secret:
+
+Vault mount: devops
+Secret path: production/database
+
+username = dbadmin
+password = Test@123
+
+
+* The Vault policy allows Jenkins to read only this production database secret.
+
+Jenkinsfile example
+
+
+
+      pipeline {
+          agent any
+      
+          stages {
+              stage('Deploy Application') {
+                  steps {
+                      withVault(
+                          configuration: [
+                              vaultUrl: 'https://vault.company.com:8200',
+                              vaultCredentialId: 'jenkins-vault-aws',
+                              engineVersion: 2
+                          ],
+                          vaultSecrets: [[
+                              path: 'devops/production/database',
+                              engineVersion: 2,
+                              secretValues: [
+                                  [
+                                      vaultKey: 'username',
+                                      envVar: 'DB_USER'
+                                  ],
+                                  [
+                                      vaultKey: 'password',
+                                      envVar: 'DB_PASSWORD'
+                                  ]
+                              ]
+                          ]]
+                      ) {
+                          sh '''
+                              echo "Starting application deployment"
+      
+                              ./deploy.sh
+                      
+                          '''
+                      }
+                  }
+              }
+          }
+      }
+
+<img width="797" height="423" alt="image" src="https://github.com/user-attachments/assets/01565245-bc00-4abc-940e-ccd89b5237ba" />
+
+The withVault block makes the requested secrets available to the enclosed pipeline steps. The plugin handles the KV v2 API path internally. 
+Jenkins+1
+
+
+Production warning: Never print DB_PASSWORD using echo, even if Jenkins masks secrets. Masking is not a guarantee against credential exposure. Use the credentials only in the deployment command, and ensure the deployment script doesn't log them.
+
+
+5. Understand the complete execution flow
+
+![Uploading image.png…]()
+      
+      Developer pushes code to Git
+                |
+                v
+           Jenkins Pipeline
+                |
+                v
+         Jenkins Agent uses
+         AWS IAM credentials
+                |
+                v
+          HashiCorp Vault
+                |
+                v
+          AWS IAM Authentication
+                |
+                v
+          Vault Policy Check
+                |
+                v
+          Retrieve DB Credentials
+                |
+                v
+          Application Deployment
+
+One important security point: Jenkins should retrieve secrets only when required. The credentials should not be stored permanently in the workspace or deployment artifacts.
+
